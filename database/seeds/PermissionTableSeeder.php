@@ -21,7 +21,8 @@ public function run()
      'product-list',
      'product-create',
      'product-edit',
-     'product-delete'
+     'product-delete',
+     'user-delete'
   ];
 
 
