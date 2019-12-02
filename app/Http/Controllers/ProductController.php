@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Product;
 use App\Transformers\ProductTransformer;
-// use App\Transformers\IlluminatePaginatorAdapter;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use League\Fractal\Serializer\ArraySerializer;
 use App\Http\Controllers\ApiController;
@@ -44,16 +43,18 @@ public function index()
   // return response()->json($products);
 
   //new code with transformer and pagination
-  $paginator = Product::paginate();
-  $products = $paginator->getCollection();
+  // $paginator = Product::paginate();
+  // $products = $paginator->getCollection();
+  // ->paginateWith(new IlluminatePaginatorAdapter($paginator))
 
-  $productsresponse = fractal()
+  $products = Product::paginate(1);
+  $response = fractal()
               ->collection($products, new ProductTransformer())
               ->serializeWith(new ArraySerializer)
-              ->paginateWith(new IlluminatePaginatorAdapter($paginator))
+              ->paginateWith(new IlluminatePaginatorAdapter($products))
               ->toArray();
 
-              $response = $this->convertPaginationResponse($productsresponse);
+              //$response = $this->convertPaginationResponse($productsresponse);
 
               return $this->setMessage("Products fetched successfully.")
                   ->respondWithStatus($response);
@@ -62,6 +63,40 @@ public function index()
 
 }
 
+public function filter(Request $request, Product $product)
+{
+$product = $product->newQuery();
+
+// Search for a user based on their name.
+if ($request->has('name')) {
+  $product->where('name', $request->input('name'));
+}
+
+if($request->has('sortBy')){
+    //Handle default parameter of get with second argument
+    $sort = $request->input('sortBy.sort');
+    $direction = $request->input('sortBy.direction');
+    $product->orderBy($sort, $direction);
+}
+
+// Continue for all of the filters.
+
+// Get the results and return them.
+$products =  $product->paginate(1);
+
+$response = fractal()
+            ->collection($products, new ProductTransformer())
+            ->serializeWith(new ArraySerializer)
+            ->paginateWith(new IlluminatePaginatorAdapter($products))
+            ->toArray();
+
+            //$response = $this->convertPaginationResponse($productsresponse);
+
+            return $this->setMessage("Products fetched successfully.")
+                ->respondWithStatus($response);
+
+
+}
 
 /**
 * Show the form for creating a new resource.
