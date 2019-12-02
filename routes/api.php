@@ -22,5 +22,6 @@ Route::post('register', 'UserController@register');
 
 Route::group(['middleware' => 'auth:api'], function(){
   Route::post('product/store', 'ProductController@store');
+  Route::get('products', 'ProductController@index');
 Route::post('details', 'UserController@details');
 });

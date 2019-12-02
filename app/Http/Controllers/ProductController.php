@@ -4,8 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Product;
+use App\Transformers\ProductTransformer;
+// use App\Transformers\IlluminatePaginatorAdapter;
+use League\Fractal\Pagination\IlluminatePaginatorAdapter;
+use League\Fractal\Serializer\ArraySerializer;
+use App\Http\Controllers\ApiController;
 
-class ProductController extends Controller
+class ProductController extends ApiController
 {
   /**
 * Display a listing of the resource.
@@ -26,9 +31,35 @@ function __construct()
 */
 public function index()
 {
-  $products = Product::latest()->paginate(5);
-  return view('products.index',compact('products'))
-      ->with('i', (request()->input('page', 1) - 1) * 5);
+  //normal collection call
+  // $products = Product::latest()->paginate(5);
+  // return view('products.index',compact('products'))
+  //     ->with('i', (request()->input('page', 1) - 1) * 5);
+
+  //new code with transformer
+  // $products = Product::all();
+  //
+  // $products = fractal($products, new ProductTransformer())->toArray();
+  //
+  // return response()->json($products);
+
+  //new code with transformer and pagination
+  $paginator = Product::paginate();
+  $products = $paginator->getCollection();
+
+  $productsresponse = fractal()
+              ->collection($products, new ProductTransformer())
+              ->serializeWith(new ArraySerializer)
+              ->paginateWith(new IlluminatePaginatorAdapter($paginator))
+              ->toArray();
+
+              $response = $this->convertPaginationResponse($productsresponse);
+
+              return $this->setMessage("Products fetched successfully.")
+                  ->respondWithStatus($response);
+
+
+
 }
 
 
