@@ -67,6 +67,14 @@ public function filter(Request $request, Product $product)
 {
 $product = $product->newQuery();
 
+if($request->has('q')) {
+  $q = $request->input('q');
+  $product->orWhere('name', 'LIKE', '%' . $q . '%')
+              ->orWhere('detail', 'LIKE', '%' . $q . '%');
+
+}
+
+
 // Search for a user based on their name.
 if ($request->has('name')) {
   $product->where('name', $request->input('name'));
@@ -82,7 +90,7 @@ if($request->has('sortBy')){
 // Continue for all of the filters.
 
 // Get the results and return them.
-$products =  $product->paginate(1);
+$products =  $product->paginate(4);
 
 $response = fractal()
             ->collection($products, new ProductTransformer())
