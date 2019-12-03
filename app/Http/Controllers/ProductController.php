@@ -8,6 +8,7 @@ use App\Transformers\ProductTransformer;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use League\Fractal\Serializer\ArraySerializer;
 use App\Http\Controllers\ApiController;
+use Auth;
 
 class ProductController extends ApiController
 {
@@ -90,7 +91,7 @@ if($request->has('sortBy')){
 // Continue for all of the filters.
 
 // Get the results and return them.
-$products =  $product->paginate(4);
+$products =  $product->paginate(2);
 
 $response = fractal()
             ->collection($products, new ProductTransformer())
@@ -130,8 +131,11 @@ public function store(Request $request)
       'detail' => 'required',
   ]);
 
+  Product::create(['name' => $request->name,
+                   'detail'=>$request->detail,
+                   'slug' => $this->createSlug($request->name),
+                   'user_id' => Auth::id()]);
 
-  Product::create($request->all());
 
   //
   // return redirect()->route('products.index')
@@ -139,6 +143,33 @@ public function store(Request $request)
   return "success";
 }
 
+public function createSLug($name, $id = 0)
+{
+  $slug = str_slug($name);
+  $allSlugs = $this->getRelatedSlugs($slug, $id);
+  if (! $allSlugs->contains('slug', $slug)){
+    return $slug;
+}
+
+$i = 1;
+$is_contain = true;
+do {
+    $newSlug = $slug . '-' . $i;
+    if (!$allSlugs->contains('slug', $newSlug)) {
+        $is_contain = false;
+        return $newSlug;
+    }
+    $i++;
+} while ($is_contain);
+
+}
+
+protected function getRelatedSlugs($slug, $id = 0)
+{
+    return Product::select('slug')->where('slug', 'like', $slug.'%')
+    ->where('id', '<>', $id)
+    ->get();
+}
 
 /**
 * Display the specified resource.
